@@ -101,22 +101,7 @@ async function run() {
         //     res.send(result)
         // })
 
-        // app.get("/hero", async (req, res) => {
-        //     res.send("Herocu connected")
-        // })
-        // // add Quantity items
 
-        // app.put("/inventory/:id", async (req, res) => {
-        //     const id = req.params.id
-        //     const filter = { _id: ObjectId(id) }
-        //     const updateDoc = {
-        //         $set: {
-        //             quantity: req.body.updateQuantity
-        //         },
-        //     }
-        //     const result = await mobileCollection.updateOne(filter, updateDoc)
-        //     res.send(result)
-        // })
 
         // // deleted itemms
         // app.delete("/inventory/:id", async (req, res) => {
