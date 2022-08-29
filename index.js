@@ -31,7 +31,7 @@ async function run() {
             res.send(result)
         })
 
-        //  post item or add items
+
 
         app.post("/inventory", async (req, res) => {
             const newitem = req.body
