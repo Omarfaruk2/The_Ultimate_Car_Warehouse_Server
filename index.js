@@ -1,4 +1,5 @@
 const express = require('express')
+const jwt = require('jsonwebtoken')
 const cors = require('cors')
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb')
 require('dotenv').config()
@@ -9,6 +10,24 @@ const app = express()
 // middleware
 app.use(cors())
 app.use(express.json())
+
+function verifyJWT(req, res, next) {
+    const authHeader = req.headers.authorization
+
+    if (!authHeader) {
+        return res.status(401).send({ message: 'unauthorized access' })
+    }
+    const token = authHeader.split(' ')[1]
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+        if (err) {
+            return res.status(403).send({ message: "Forbiden access" })
+        }
+        console.log(decoded, "decoded")
+        req.decoded = decoded
+        next()
+    })
+
+}
 
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.odsjfxq.mongodb.net/?retryWrites=true&w=majority`
@@ -24,6 +43,18 @@ async function run() {
         await client.connect()
         const productsCollection = client.db("carcollection").collection("services")
 
+
+
+        app.post("/login", async (req, res) => {
+            const user = req.body
+
+            const accessToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1d' })
+
+            // console.log(accessToken)
+            res.send({ accessToken })
+        })
+
+        // find all inventory
         app.get('/inventory', async (req, res) => {
             const query = {}
             const cursor = productsCollection.find(query)
@@ -32,7 +63,7 @@ async function run() {
         })
 
 
-
+        // post a single inventory
         app.post("/inventory", async (req, res) => {
             const newitem = req.body
             const result = await productsCollection.insertOne(newitem)
@@ -40,7 +71,7 @@ async function run() {
         })
 
 
-
+        // find a single inventory
         // details item
         app.get('/inventory/:id', async (req, res) => {
             const id = req.params.id
@@ -55,7 +86,6 @@ async function run() {
         //   // update stock
         app.put("/inventory/:id", async (req, res) => {
             const id = req.params.id
-            console.log(req.body)
             const filter = { _id: ObjectId(id) }
 
             const updateDoc = {
@@ -67,7 +97,7 @@ async function run() {
             res.send(result)
         })
 
-        // delete
+        // delete a single inventory
         app.delete("/inventory/:id", async (req, res) => {
             const id = req.params.id
             const query = { _id: ObjectId(id) }
@@ -77,49 +107,19 @@ async function run() {
 
 
         // My items
-        app.get('/myitems/:email', async (req, res) => {
+        app.get('/myitems/:email', verifyJWT, async (req, res) => {
+            const decodedEmail = req.decoded.email
             const email = req.params.email
-            const query = { email: email }
-            const cursor = await productsCollection.find(query).toArray()
-            res.send(cursor)
+            if (email === decodedEmail) {
+                const query = { email: email }
+                const cursor = await productsCollection.find(query).toArray()
+                res.send(cursor)
+            }
+            else {
+                res.status(403).send({ message: "Fotbiden access" })
+            }
         })
 
-
-
-
-
-        // // delevered items
-        // app.put("/inventory/:id", async (req, res) => {
-        //     const id = req.params.id
-        //     const updatedUser = req.body
-        //     const filter = { _id: ObjectId(id) }
-        //     const options = { upsert: true }
-        //     const updateDoc = {
-        //         $set: updatedUser
-        //     }
-        //     const result = await mobileCollection.updateOne(filter, updateDoc, options)
-        //     res.send(result)
-        // })
-
-
-
-        // // deleted itemms
-        // app.delete("/inventory/:id", async (req, res) => {
-        //     const id = req.params.id
-        //     const query = { _id: ObjectId(id) }
-        //     const result = await mobileCollection.deleteOne(query)
-        //     res.send(result)
-        // })
-
-
-        // My items
-        // app.get('/myitems', async (req, res) => {
-        //     const email = req.query.email
-        //     const query = { email: email }
-        //     const cursor = productsCollection.find(query)
-        //     const result = await cursor.toArray()
-        //     res.send(result)
-        // })
 
 
     } finally {
