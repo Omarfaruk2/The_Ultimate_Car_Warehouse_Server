@@ -6,7 +6,6 @@ require('dotenv').config()
 const port = process.env.PORT || 5000
 const app = express()
 
-
 // middleware
 app.use(cors())
 app.use(express.json())
@@ -52,9 +51,6 @@ async function run() {
         })
 
 
-
-
-
         // find all inventory
         app.get('/inventory', async (req, res) => {
             const query = {}
@@ -72,7 +68,7 @@ async function run() {
         })
 
 
-        // find a single inventory
+        // find single inventory
         // details item
         app.get('/inventory/:id', async (req, res) => {
             const id = req.params.id
@@ -80,8 +76,6 @@ async function run() {
             const result = await productsCollection.findOne(query)
             res.send(result)
         })
-
-
 
 
         //   // update stock
@@ -119,9 +113,7 @@ async function run() {
             else {
                 res.send(403).send({ message: "forbiden access" })
             }
-
         })
-
 
     } finally {
 
