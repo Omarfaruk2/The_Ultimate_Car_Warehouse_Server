@@ -11,30 +11,27 @@ const app = express()
 app.use(cors())
 app.use(express.json())
 
+
 function verifyJWT(req, res, next) {
     const authHeader = req.headers.authorization
-
     if (!authHeader) {
-        return res.status(401).send({ message: 'unauthorized access' })
+        return res.status(401).send({ message: "unauthorized access" })
     }
     const token = authHeader.split(' ')[1]
     jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
         if (err) {
-            return res.status(403).send({ message: "Forbiden access" })
+            return res.status(403).send({ message: "Forbiden Access" })
         }
-        console.log(decoded, "decoded")
+        console.log("decoded", decoded)
         req.decoded = decoded
         next()
     })
-
+    // console.log("inside verify jwt", authHeader)
 }
 
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.odsjfxq.mongodb.net/?retryWrites=true&w=majority`
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 })
-
-
-
 
 
 async function run() {
@@ -44,15 +41,19 @@ async function run() {
         const productsCollection = client.db("carcollection").collection("services")
 
 
-
+        // auth
         app.post("/login", async (req, res) => {
             const user = req.body
+            const accessToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
+                expiresIn: "1d",
+            })
 
-            const accessToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1d' })
-
-            // console.log(accessToken)
             res.send({ accessToken })
         })
+
+
+
+
 
         // find all inventory
         app.get('/inventory', async (req, res) => {
@@ -107,19 +108,19 @@ async function run() {
 
 
         // My items
-        app.get('/myitems/:email', verifyJWT, async (req, res) => {
+        app.get('/myitems', verifyJWT, async (req, res) => {
             const decodedEmail = req.decoded.email
-            const email = req.params.email
+            const email = req.query.email
+            const query = { email: email }
             if (email === decodedEmail) {
-                const query = { email: email }
                 const cursor = await productsCollection.find(query).toArray()
                 res.send(cursor)
             }
             else {
-                res.status(403).send({ message: "Fotbiden access" })
+                res.send(403).send({ message: "forbiden access" })
             }
-        })
 
+        })
 
 
     } finally {
